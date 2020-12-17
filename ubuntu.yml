@@ -1,0 +1,120 @@
+---
+- name: "Creating Ubuntu instance"
+  hosts: localhost
+  connection: local
+  vars_files:
+    - variable.vars
+  tasks:
+    - name: "Ec2 creation"
+      ec2:
+        region: "us-east-1"
+        instance_type: t2.micro
+        key_name: project
+        image: "ami-0885b1f6bd170450c"
+        vpc_subnet_id: "subnet-3211fd13"
+        assign_public_ip: yes
+        instance_tags:
+          Name: Ansible-Ubuntu
+        aws_access_key: "{{ aws_access_key_id }}"
+        aws_secret_key: "{{ aws_secret_access_key }}"
+      register: ec2_data
+    
+    - name: "EC2 Details"
+      ec2_instance_facts:
+        region: "us-east-1"
+        aws_access_key: "{{ aws_access_key_id }}"
+        aws_secret_key: "{{ aws_secret_access_key }}"
+        instance_ids: "{{ ec2_data.instances[0].id }}"
+      register: ec2_metadata
+
+<<<<<<< HEAD
+    - name: Create SSH Group to login dynamically to EC2 Instance
+      add_host:   
+=======
+    - name: Create Inventory group
+      add_host: 
+>>>>>>> ca19dbfa0f00f92df2ab31b1d2c95606f954ca1f
+        groupname: Ubuntuec2
+        hostname: "{{ec2_metadata.instances[0].public_ip_address}}"
+        ansible_user: ubuntu
+        ansible_ssh_private_key_file: project.pem
+    
+    - name: Wait for SSH
+      wait_for: 
+        host: "{{ec2_metadata.instances[0].public_ip_address}}"
+        port: 22 
+        state: started
+    
+- hosts: Ubuntuec2
+  become: true
+  tasks:
+    - name: Update apt
+      apt: 
+        update_cache: yes
+
+    - name: Installing packages
+      apt:
+        name: "{{ item }}"
+        state: latest 
+      with_items: 
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - python3-pip
+        - virtualenv
+        - python3-setuptools
+        - unzip
+        - npm
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu xenial stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        update_cache: yes 
+        name: docker-ce
+        state: latest
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    - name: Add ubuntu to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+    
+    - name: Copying docker file and nodejs modules
+      copy:
+        src: nodejs/
+        dest: /home/ubuntu/
+      
+    - name: Copying docker ignore
+      template:
+        src: .dockerignore
+        dest: /home/ubuntu/.dockerignore
+
+    - name: Buiding a nodejs image
+      docker_image:
+        path: /home/ubuntu/
+        name: roshanjoseph23/nodejsapp
+        tag: v3
+
+    - name: "Create Apache container"
+      docker_container:
+        name: nodejsapp
+        image: roshanjoseph23/nodejsapp:v3
+        state: started
+        ports:
+          - "80:80"
+        restart: yes
+        restart_policy: unless-stopped
