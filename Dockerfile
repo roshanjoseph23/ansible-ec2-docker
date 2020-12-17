@@ -1,7 +1,7 @@
 FROM node:15
 WORKDIR /usr/src/app
-COPY package*.json ./
+COPY nodejs/package*.json ./
 RUN npm install
-COPY . .
+COPY nodejs/server.js .
 EXPOSE 80
 CMD [ "node", "server.js" ]

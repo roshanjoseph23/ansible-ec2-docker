@@ -1,11 +1,11 @@
 ---
-- name: "Creating Ubuntu instance"
+- name: Creating Ubuntu instance
   hosts: localhost
   connection: local
   vars_files:
     - variable.vars
   tasks:
-    - name: "Ec2 creation"
+    - name: Ec2 creation
       ec2:
         region: "us-east-1"
         instance_type: t2.micro
@@ -19,7 +19,7 @@
         aws_secret_key: "{{ aws_secret_access_key }}"
       register: ec2_data
     
-    - name: "EC2 Details"
+    - name: EC2 Details
       ec2_instance_facts:
         region: "us-east-1"
         aws_access_key: "{{ aws_access_key_id }}"
@@ -87,12 +87,22 @@
         name: ubuntu
         groups: docker
         append: yes
-    
-    - name: Copying docker file and nodejs modules
+
+    - name: Creating a nodejs directory
+      file:
+        path: /home/ubuntu/nodejs
+        state: directory
+
+    - name: Copying docker file and 
       copy:
-        src: nodejs/
+        src: Dockerfile
         dest: /home/ubuntu/
       
+    - name: Copying nodejs modules
+      copy:
+        src: nodejs/
+        dest: /home/ubuntu/nodejs/
+
     - name: Copying docker ignore
       template:
         src: .dockerignore
@@ -104,7 +114,7 @@
         name: roshanjoseph23/nodejsapp
         tag: v3
 
-    - name: "Create Nodejs-webapp container"
+    - name: Create Nodejs-webapp container
       docker_container:
         name: nodejsapp
         image: roshanjoseph23/nodejsapp:v3
