@@ -27,7 +27,7 @@
         instance_ids: "{{ ec2_data.instances[0].id }}"
       register: ec2_metadata
 
-    - name: Create SSH Group to login dynamically to EC2 Instance
+    - name: Create inventory group
       add_host:   
         groupname: Ubuntuec2
         hostname: "{{ec2_metadata.instances[0].public_ip_address}}"
