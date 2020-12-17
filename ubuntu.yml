@@ -104,7 +104,7 @@
         name: roshanjoseph23/nodejsapp
         tag: v3
 
-    - name: "Create Apache container"
+    - name: "Create Nodejs-webapp container"
       docker_container:
         name: nodejsapp
         image: roshanjoseph23/nodejsapp:v3
